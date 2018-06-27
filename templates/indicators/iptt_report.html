@@ -3,9 +3,6 @@
 {% block title %}Indicator Performance Tracking Table{% endblock %}
 {% block page_title %}{% endblock %}
 {% block bodyclasses %}page_iptt_table{% endblock %}
-{% block extra_css_in_header %}
-<link rel="stylesheet" href="{% static "css/perfect-scrollbar.css" %}">
-{% endblock extra_css_in_header %}
 
 {% block content %}
   <div class="sidebar_wrapper">
@@ -200,9 +197,3 @@
     {% include 'indicators/indicator_form_common_js.html' %}
   </main>
 {% endblock content %}
-{% block extra_js_in_body %}
-<script src="{% static "js/perfect-scrollbar.min.js" %}"></script>
-<script>
-    const ps = new PerfectScrollbar('#iptt_table_wrapper');
-</script>
-{% endblock %}
