@@ -226,16 +226,18 @@ class IPTT_Mixin(object):
                     date_collected__lte=end_date) \
                     .order_by('-date_collected', '-pk')
 
-                # 1.) If the indicator is NUMBER and CUMULATIVE then do include all data
-                # for the first period up to the first period's end_date. In other words,
-                # do not limit data records by the current period's start date because if a
-                # user selected most_recent=2 then we want the first most_recent period to include
-                # all of the data from the periods that the user excluded by specifying num_recents=2
-                # since it is a cumulative indicator.
-                # 2.) If it is not a cumulative indicator then restrict it both by start_date and end_date
-                # 3.) If it is not the first target_period then still restrict it by both start_date and
-                # end_date otherwise it will double count the data prior to the first_period's start_date
-                # for cumulative indicators
+                """
+                1.) If the indicator is NUMBER and CUMULATIVE then do include all data
+                for the first period up to the first period's end_date. In other words,
+                do not limit data records by the current period's start date because if a
+                user selected most_recent=2 then we want the first most_recent period to include
+                all of the data from the periods that the user excluded by specifying num_recents=2
+                since it is a cumulative indicator.
+                2.) If it is not a cumulative indicator then restrict it both by start_date and end_date
+                3.) If it is not the first target_period then still restrict it by both start_date and
+                end_date otherwise it will double count the data prior to the first_period's start_date
+                for cumulative indicators
+                """
                 if i == 0:
                     annotation_sum = Sum(
                         Case(
