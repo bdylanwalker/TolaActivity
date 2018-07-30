@@ -1,4 +1,4 @@
-from django.db.models import Sum, Count, Q, When, Case, F, Max, OutputField
+from django.db.models import Sum, Count, Q, When, Case, F, Max, OuterRef, Subquery
 from django.contrib.auth.models import User
 from indicators.models import Indicator, PeriodicTarget, CollectedData
 from workflow.models import Country, Program, TolaUser
@@ -20,21 +20,18 @@ class Command(BaseCommand):
         inds = Indicator.objects.filter(program__country__in=countries)
         inds = inds.prefetch_related('collecteddata_set', 'periodictargets')
         currdate = timezone.now()
+
+        last_target = PeriodicTarget.objects.filter(
+                indicator=OuterRef('pk'), end_date__lt=currdate).order_by('-end_date', '-pk')
+
         inds2 = inds.annotate(
-            # last_target = Get the Last PASSED TARGET
-            last_target=Max(
-                Case(
-                    When(periodictargets__end_date__lt=currdate),
-                    then=F('collecteddata__achieved')
-                )
-            ),
             targets_sum=Sum(
                         Case(
                             When(
                                 Q(unit_of_measure_type=Indicator.NUMBER) &
                                 Q(is_cumulative=False) &
                                 Q(collecteddata__periodic_target__isnull=False) &
-                                Q(collecteddata__date_collected__lt=currdate),
+                                Q(collecteddata__date_collected__lt=Subquery(last_target.values('end_date')[:1])),
                                 then=F('collecteddata__achieved')
                             ),
                         )
@@ -42,5 +39,5 @@ class Command(BaseCommand):
                 )
 
         for i in inds2:
-            print(i.id, i.targets_sum, i.last_target)
+            print(i.id, i.targets_sum)
         print(inds2.count())
