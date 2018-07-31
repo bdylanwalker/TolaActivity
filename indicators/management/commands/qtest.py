@@ -21,23 +21,36 @@ class Command(BaseCommand):
         inds = inds.prefetch_related('collecteddata_set', 'periodictargets')
         currdate = timezone.now()
 
-        last_target = PeriodicTarget.objects.filter(
-                indicator=OuterRef('pk'), end_date__lt=currdate).order_by('-end_date', '-pk')
+        last_target = PeriodicTarget.objects \
+            .filter(indicator=OuterRef('pk'), end_date__lt=currdate, collecteddata__isnull=False) \
+            .order_by('-end_date', '-pk')
+
+        # last_target = PeriodicTarget.objects.filter(
+        #         indicator=OuterRef('pk'), end_date__lt=currdate).order_by('-end_date', '-pk')
 
         inds2 = inds.annotate(
-            targets_sum=Sum(
-                        Case(
-                            When(
-                                Q(unit_of_measure_type=Indicator.NUMBER) &
-                                Q(is_cumulative=False) &
-                                Q(collecteddata__periodic_target__isnull=False) &
-                                Q(collecteddata__date_collected__lt=Subquery(last_target.values('end_date')[:1])),
-                                then=F('collecteddata__achieved')
-                            ),
-                        )
-                    )
+            results_noncumulative_sum=Sum(
+                Case(
+                    When(
+                        Q(unit_of_measure_type=Indicator.NUMBER) &
+                        Q(is_cumulative=False) &
+                        Q(collecteddata__periodic_target__isnull=False) &
+                        Q(collecteddata__date_collected__lt=Subquery(last_target.values('end_date')[:1])),
+                        then=F('collecteddata__achieved')
+                    ),
                 )
+            ),
+            results_cumulative_sum=Sum(
+                Case(
+                    When(
+                        Q(is_cumulative=True) &
+                        Q(collecteddata__periodic_target__end_date=Subquery(last_target.values('end_date')[:1])),
+                        then=F('collecteddata__achieved')
+                    ),
+                )
+            )
+        )
 
         for i in inds2:
-            print(i.id, i.targets_sum)
+            print(i.id, i.results_noncumulative_sum, i.results_cumulative_sum)
         print(inds2.count())
