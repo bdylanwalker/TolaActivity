@@ -4,6 +4,9 @@
 This script uses GitHub APIs to fetch a list of issues associated with a project.
 It outputs issue numbers and titles for all cards in all columns of the project.
 The output is particularly useful for putting into the GitHub release notes.
+
+This script is completely unrelated to the Tola Activity application and should be run as
+a standalone python script.
 """
 
 import requests
@@ -11,6 +14,7 @@ from requests.auth import HTTPBasicAuth
 import json
 import sys
 import re
+import getpass
 
 headers = {'Accept': 'application/vnd.github.inertia-preview+json'}
 
@@ -24,7 +28,7 @@ if auth_pref == '1':
     auth = ''
 elif auth_pref == '2':
     username = raw_input('GitHub username: ')
-    password = raw_input('GitHub password: ')
+    password = getpass.getpass('GitHub password:')
     auth = HTTPBasicAuth(username, password)
 else:
     print type(auth_pref)
