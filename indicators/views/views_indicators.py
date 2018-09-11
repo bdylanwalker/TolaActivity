@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from urlparse import urlparse
 
 import dateparser
@@ -12,7 +12,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.urlresolvers import reverse_lazy
 from django.db import connection
 from django.db.models import (
-    Count, Min, Q, Sum, Avg, Max, DecimalField, OuterRef, Subquery
+    Count, Min, Q, F, Sum, Avg, Max, Value, DecimalField, OuterRef, Subquery, Case, When,
 )
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, render_to_response
@@ -1461,9 +1461,80 @@ class ProgramPage(ListView):
             indicator_filter_name = Indicator.objects.get(id=indicator_filter_id)
             indicator_filters['id'] = indicator_filter_id
 
-        indicators = Indicator.objects.filter(**{'program__id': program_id, 'id':self.kwargs['indicator_id']})
         program = Program.objects.get(id=program_id, funding_status="Funded", country__in=countries)
+        # indicators = Indicator.objects.filter(**indicator_filters).prefetch_related('periodictargets__collecteddata_set__evidence')
+        currdate = date(2022,8,30)
+        print 'currdate', currdate
+        last_target = PeriodicTarget.objects \
+            .filter(indicator=OuterRef('pk'), end_date__lt=currdate) \
+            .order_by('-end_date', '-pk')
+        last_target = PeriodicTarget.objects \
+            .filter(indicator_id=4986, end_date__lt=currdate) \
+            .order_by('-end_date', '-pk')
+        last_achieved = CollectedData.objects \
+            .filter(indicator=OuterRef('pk'), periodic_target__end_date__lt=currdate) \
+            .order_by('-date_collected', '-pk')
+        print 'last_target=', last_target.values('end_date')[0]
+        from django.db.models import IntegerField
         indicators = Indicator.objects.filter(**indicator_filters)
+
+        testi = indicators[0]
+        print 'idate', Indicator.objects.get(id=4986).periodictargets.first().end_date
+        print 'targets', [pt.target for pt in Indicator.objects.get(id=4986).periodictargets.all()]
+
+        i2 = indicators.annotate(
+            program_to_date_target=Sum(
+                Case(
+                    When(
+                        Q(unit_of_measure_type=Indicator.NUMBER) &
+                        Q(is_cumulative=False) &
+                        Q(periodictargets__isnull=False) &
+                        Q(periodictargets__end_date__lt=Subquery(last_target.values('end_date')[:1])),
+                        then=F('periodictargets__target')
+                    ),
+                    # When(
+                    #     Q(unit_of_measure_type=Indicator.PERCENTAGE) &
+                    #     Q(periodictargets__isnull=False) &
+                    #     Q(periodictargets__end_date=Subquery(last_target.values('end_date')[:1])),
+                    #     then=F('periodictargets__target')
+                    # ),
+                    default=Value(0)
+
+                )
+            ),
+            program_to_date_achieved = Sum(
+                Case(
+                    When(
+                        Q(unit_of_measure_type=Indicator.NUMBER) &
+                        Q(is_cumulative=False) &
+                        Q(periodictargets__collecteddata__isnull=False) &
+                        Q(periodictargets__collecteddata__date_collected__lte=Subquery(
+                            last_achieved.values('date_collected')[:1])),
+                        #Q(collecteddata__date_collected__lt=currdate),
+                        then=F('periodictargets__collecteddata__achieved')
+                    ),
+                    When(
+                        Q(unit_of_measure_type=Indicator.PERCENTAGE) &
+                        Q(periodictargets__collecteddata__isnull=False) &
+                        Q(periodictargets__collecteddata__date_collected=Subquery(
+                            last_achieved.values('date_collected')[:1])),
+                        # Q(collecteddata__date_collected__lt=currdate),
+                        then=F('periodictargets__collecteddata__achieved')
+                    ),
+                    default=Value(0)
+
+                )
+            )
+        )
+
+        print 'query', i2.query
+
+        for indicator in i2:
+            if indicator.name == 'queries':
+                print indicator.id, indicator.name
+                print 'target', indicator.program_to_date_target
+                print 'achieved', indicator.program_to_date_achieved
+
         type_ids = set(indicators.values_list('indicator_type', flat=True))
         indicator_types = IndicatorType.objects.filter(id__in=list(type_ids))
         indicator_count = indicators.count()
