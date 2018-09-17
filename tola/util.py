@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail, mail_admins, mail_managers, EmailMessage
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import user_passes_test
+from django.utils import translation
 
 
 #CREATE NEW DATA DICTIONARY OBJECT
@@ -145,3 +146,16 @@ def get_GAIT_data(gait_ids):
     base_url = 'https://mcapi.mercycorps.org/gaitprogram/?gaitids='
     response = requests.get(base_url + ','.join(cleaned_ids))
     return json.loads(response.content)
+
+
+def set_session_language(request):
+    user = getattr(request, 'user', None)
+    if user.is_authenticated:
+        tola_user = getattr(user, 'tola_user', None)
+        user_language = getattr(tola_user, 'language', None)
+        # bypass django language pref discovery
+        # (see https://docs.djangoproject.com/en/1.11/topics/i18n/translation/#how-django-discovers-language-preference)
+        translation.activate(user_language)
+        request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+    else:
+        request.session[translation.LANGUAGE_SESSION_KEY] = 'en'

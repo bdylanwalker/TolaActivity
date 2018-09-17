@@ -9,21 +9,32 @@ from django.urls import reverse_lazy
 from workflow.models import ProjectAgreement, ProjectComplete, Program, SiteProfile, Sector,Country, TolaUser,TolaSites, TolaBookmarks, FormGuidance
 from indicators.models import CollectedData, Indicator
 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Sum, Q, Count
 from tola.util import getCountry
 from django.contrib.auth.models import Group
-
+from django.utils import translation
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+
+from tola.util import set_session_language
 
 
 @login_required(login_url='/accounts/login/')
 def index(request, selected_countries=None, id=0, sector=0):
     """
     Home page
-    get count of agreements approved and total for dashboard
     """
+
+    try:
+        request.session[translation.LANGUAGE_SESSION_KEY]
+    except KeyError:
+        set_session_language(request)
+        return redirect('index')
+
+
+    # Get count of agreements approved and total for dashboard
+
     program_id = id
     user_countries = getCountry(request.user)
 
