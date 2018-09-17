@@ -1138,6 +1138,16 @@ class IPTTReportQuickstartView(FormView):
 class IPTT_ReportView(IPTT_Mixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
+        from django.utils import translation
+        from django.shortcuts import redirect
+        from tola.util import set_session_language
+        try:
+            request.session[translation.LANGUAGE_SESSION_KEY]
+        except KeyError:
+            set_session_language(request)
+            url = request.META['HTTP_HOST'] + request.META['PATH_INFO'] + request.META['QUERY_STRING']
+            return redirect(url)
+
         context = self.get_context_data(**kwargs)
 
         form_kwargs = {'request': request, 'program': context['program']}
