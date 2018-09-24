@@ -30,7 +30,7 @@ Python 2 installation as shown in the following:
 ```bash
 $ brew install python@2
 $ brew install pip
-$ brew install mysql mysql-utilies
+$ brew install mysql mysql-utilities
 $ brew install py2cairo pango
 $ git clone https://github.com/mercycorps.org/TolaActivity.git
 $ cd TolaActivity
