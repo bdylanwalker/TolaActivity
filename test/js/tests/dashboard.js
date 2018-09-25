@@ -36,20 +36,6 @@ describe('TolaActivity Dashboard', function() {
     NavBar.TolaActivity.click()
   })
 
-  // it('should have a Workflow dropdown', function() {
-  //   expect(null !== NavBar.Workflow)
-  //   expect(undefined !== NavBar.Workflow)
-  //   NavBar.Workflow.click()
-  // })
-
-  // it('should have a Country Dashboard dropdown', function() {
-  //   DashboardPage.CountryDashboardDropdown.click()
-  // })
-
-  // it('should have a Filter by Program link', function() {
-  //   DashboardPage.FilterByProgramDropdown.click()
-  // })
-
   it('should have a Reports dropdown', function() {
     expect(null !== NavBar.Reports)
     expect(undefined !== NavBar.Reports)
@@ -92,9 +78,4 @@ describe('TolaActivity Dashboard', function() {
     expect(null !== DashboardPage.KpiTargetsVsActualsChart)
     expect(undefined !== DashboardPage.KpiTargetsVsActualsChart)
   })
-
-  // Enhancements?
-  it('should be able to zoom in on the map')
-  it('should be able to zoom out on the map')
-  it('should display data points on the Sites map')
 })
