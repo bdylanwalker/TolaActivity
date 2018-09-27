@@ -1530,7 +1530,7 @@ class ProgramPage(ListView):
         print 'query', i2.query
 
         for indicator in i2:
-            if indicator.name == 'queries':
+            if indicator.name == 'Queries 2':
                 print indicator.id, indicator.name
                 print 'target', indicator.program_to_date_target
                 print 'achieved', indicator.program_to_date_achieved
